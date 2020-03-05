@@ -1,0 +1,73 @@
+#!/bin/bash
+
+params=("$@")
+paramNr=$#; # echo $paramNr
+paramNrLoop=$(($paramNr - 1)); # echo $paramNrLoop
+
+pozSrc=0
+pozDest=0
+pozSrcStart=0
+pozSrcStop=0
+pozDestStart=0
+pozDestStop=0
+exitFlag=0
+
+declare -a srcArray; srcArray=()
+declare -a destArray; destArray=()
+declare -a srcFile; srcFile=()
+declare -a destFile; destFile=()
+
+helpMsg="Script that copies from multiple sources to multiple destinations. Use flag -sf followed by the file containing the source files and or folders and flag -df followed by the file containing the destination locations"
+
+for i in "${!params[@]}"; do
+	[ "${params[$i]}" == "-h" -o "${params[$i]}" == "--help" ] && echo $helpMsg && exitFlag=1 && break
+done
+
+[ $exitFlag -eq 1 ] && exit 0
+
+for i in "${!params[@]}"; do
+	[ "${params[$i]}" == "-sf" ] && pozSrc=$i
+	[ "${params[$i]}" == "-df" ] && pozDest=$i && break
+done
+
+if [[ $pozSrc -lt $pozDest ]]
+then
+	pozSrcStart=$(($pozSrc + 1))
+	pozSrcStop=$(($pozDest - 1))
+	pozDestStart=$(($pozDest + 1))
+	pozDestStop=$paramNrLoop
+fi
+
+if [[ $pozSrc -gt $pozDest ]]
+then
+	pozSrcStart=$(($pozSrc + 1))
+	pozDestStop=$(($pozSrc - 1))
+	pozDestStart=$(($pozDest + 1))
+	pozSrcStop=$paramNrLoop
+fi
+
+for ((i=$pozSrcStart; i<=$pozSrcStop; i++)); do
+	srcFile+=("${params[$i]}")
+done
+
+for ((i=$pozDestStart; i<=$pozDestStop; i++)); do
+	destFile+=("${params[$i]}")
+done
+
+for fisierul in "${srcFile[@]}"; do
+	while IFS= read -r linie; do
+		srcArray+=("$linie")
+	done < "$fisierul"
+done
+
+for fisierul in "${destFile[@]}"; do
+	while IFS= read -r linie; do
+		destArray+=("$linie")
+	done < "$fisierul"
+done
+
+for destLoop in "${destArray[@]}"; do
+	cp -r -t "$destLoop" "${srcArray[@]}"
+done
+
+
